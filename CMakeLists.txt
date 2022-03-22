@@ -11,12 +11,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(CMAKE_BUILD_TYPE "RELEASE")
 
 find_package(catkin REQUIRED COMPONENTS
-  fast_gicp
+  fast_gicp 
   geodesy
   geometry_msgs
-  interactive_markers
-  message_generation
-  ndt_omp
+  interactive_markers   #/opt/ros/melodic/include
+  message_generation   #/opt/ros/melodic/share
+  ndt_omp   
   nmea_msgs
   pcl_ros
   roscpp
