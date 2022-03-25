@@ -11,7 +11,7 @@
 
 #include <std_msgs/Time.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <hdl_graph_slam/FloorCoeffs.h>
+#include <hdl_graph_slam/FloorCoeffs.h>//self-defined message
 
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
@@ -29,7 +29,7 @@ namespace hdl_graph_slam {
 class FloorDetectionNodelet : public nodelet::Nodelet {
 public:
   typedef pcl::PointXYZI PointT;
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW //重载new函数，内存对齐
 
   FloorDetectionNodelet() {}
   virtual ~FloorDetectionNodelet() {}

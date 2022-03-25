@@ -16,11 +16,11 @@
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/filters/radius_outlier_removal.h>
-#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/passthrough.h> //直通滤波
+#include <pcl/filters/voxel_grid.h> //体素珊格滤波器,立方体内的所有点云重心
+#include <pcl/filters/approximate_voxel_grid.h>//依据每一个体素的中心点来获取点云的
+#include <pcl/filters/radius_outlier_removal.h> //去除设置半径内点数少于设定数的点，认定其为离群点
+#include <pcl/filters/statistical_outlier_removal.h>//对于每个点的，计算它到它所有临近点的平均距离，假设得到的是一个高斯分布，那么根据均值与标准差，平均距离在标准范围外的点，就是离群点
 
 namespace hdl_graph_slam {
 
@@ -49,7 +49,7 @@ public:
 private:
   void initialize_params() {
     std::string downsample_method = private_nh.param<std::string>("downsample_method", "VOXELGRID");
-    double downsample_resolution = private_nh.param<double>("downsample_resolution", 0.1);
+    double downsample_resolution = private_nh.param<double>("downsample_resolution", 0.1);//0.1m
 
     if(downsample_method == "VOXELGRID") {
       std::cout << "downsample: VOXELGRID " << downsample_resolution << std::endl;
@@ -71,8 +71,8 @@ private:
 
     std::string outlier_removal_method = private_nh.param<std::string>("outlier_removal_method", "STATISTICAL");
     if(outlier_removal_method == "STATISTICAL") {
-      int mean_k = private_nh.param<int>("statistical_mean_k", 20);
-      double stddev_mul_thresh = private_nh.param<double>("statistical_stddev", 1.0);
+      int mean_k = private_nh.param<int>("statistical_mean_k", 20);//均值
+      double stddev_mul_thresh = private_nh.param<double>("statistical_stddev", 1.0);//标准差
       std::cout << "outlier_removal: STATISTICAL " << mean_k << " - " << stddev_mul_thresh << std::endl;
 
       pcl::StatisticalOutlierRemoval<PointT>::Ptr sor(new pcl::StatisticalOutlierRemoval<PointT>());
@@ -113,16 +113,16 @@ private:
 
     // if base_link_frame is defined, transform the input cloud to the frame
     if(!base_link_frame.empty()) {
-      if(!tf_listener.canTransform(base_link_frame, src_cloud->header.frame_id, ros::Time(0))) {
+      if(!tf_listener.canTransform(base_link_frame, src_cloud->header.frame_id, ros::Time(0))) {//判断
         std::cerr << "failed to find transform between " << base_link_frame << " and " << src_cloud->header.frame_id << std::endl;
       }
 
       tf::StampedTransform transform;
-      tf_listener.waitForTransform(base_link_frame, src_cloud->header.frame_id, ros::Time(0), ros::Duration(2.0));
-      tf_listener.lookupTransform(base_link_frame, src_cloud->header.frame_id, ros::Time(0), transform);
+      tf_listener.waitForTransform(base_link_frame, src_cloud->header.frame_id, ros::Time(0), ros::Duration(2.0));//等待
+      tf_listener.lookupTransform(base_link_frame, src_cloud->header.frame_id, ros::Time(0), transform); //可以获得两个坐标系之间转换的关系，包括旋转和平移。src_cloud2base
 
       pcl::PointCloud<PointT>::Ptr transformed(new pcl::PointCloud<PointT>());
-      pcl_ros::transformPointCloud(*src_cloud, *transformed, transform);
+      pcl_ros::transformPointCloud(*src_cloud, *transformed, transform);//存储转移到transformed
       transformed->header.frame_id = base_link_frame;
       transformed->header.stamp = src_cloud->header.stamp;
       src_cloud = transformed;
@@ -167,7 +167,7 @@ private:
 
     std::copy_if(cloud->begin(), cloud->end(), std::back_inserter(filtered->points), [&](const PointT& p) {
       double d = p.getVector3fMap().norm();
-      return d > distance_near_thresh && d < distance_far_thresh;
+      return d > distance_near_thresh && d < distance_far_thresh; //(0.5-100m)
     });
 
     filtered->width = filtered->size();
@@ -233,7 +233,7 @@ private:
       // TODO: transform IMU data into the LIDAR frame
       double delta_t = scan_period * static_cast<double>(i) / cloud->size();
       Eigen::Quaternionf delta_q(1, delta_t / 2.0 * ang_v[0], delta_t / 2.0 * ang_v[1], delta_t / 2.0 * ang_v[2]);
-      Eigen::Vector3f pt_ = delta_q.inverse() * pt.getVector3fMap();
+      Eigen::Vector3f pt_ = delta_q.inverse() * pt.getVector3fMap();//获取XYZ
 
       deskewed->at(i) = cloud->at(i);
       deskewed->at(i).getVector3fMap() = pt_;

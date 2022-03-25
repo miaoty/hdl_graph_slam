@@ -14,7 +14,7 @@ class Map2OdomPublisher:
 		self.odom_msg = odom_msg
 
 	def spin(self):
-		if not hasattr(self, 'odom_msg'):
+		if not hasattr(self, 'odom_msg'): #是否包含对应属性
 			self.broadcaster.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), 'odom', 'map')
 			return
 
