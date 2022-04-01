@@ -68,7 +68,7 @@
     <param name="reg_nn_search_method" value="DIRECT7" />
   </node>
 
-  <!-- floor_detection_nodelet -->
+  <!-- floor_detection_nodelet 1.5 0.5-->
   <node pkg="nodelet" type="nodelet" name="floor_detection_nodelet" args="load hdl_graph_slam/FloorDetectionNodelet $(arg nodelet_manager)" if="$(arg enable_floor_detection)">
     <param name="points_topic" value="$(arg points_topic)" />
     <param name="tilt_deg" value="0.0" />
