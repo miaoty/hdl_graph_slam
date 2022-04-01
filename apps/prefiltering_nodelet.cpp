@@ -216,7 +216,7 @@ private:
 
     imu_queue.erase(imu_queue.begin(), loc);
 
-    Eigen::Vector3f ang_v(imu_msg->angular_velocity.x, imu_msg->angular_velocity.y, imu_msg->angular_velocity.z);
+    Eigen::Vector3f ang_v(imu_msg->angular_velocity.x, imu_msg->angular_velocity.y, imu_msg->angular_velocity.z); //欧拉角
     ang_v *= -1;
 
     pcl::PointCloud<PointT>::Ptr deskewed(new pcl::PointCloud<PointT>());

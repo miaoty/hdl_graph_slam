@@ -78,7 +78,7 @@ private:
     }
 
     // floor detection
-    boost::optional<Eigen::Vector4f> floor = detect(cloud);
+    boost::optional<Eigen::Vector4f> floor = detect(cloud); //boost::optional 用于返回值的选择
 
     // publish the detected floor coefficients
     hdl_graph_slam::FloorCoeffs coeffs;
@@ -95,7 +95,7 @@ private:
     // for offline estimation
     std_msgs::HeaderPtr read_until(new std_msgs::Header());
     read_until->frame_id = points_topic;
-    read_until->stamp = cloud_msg->header.stamp + ros::Duration(1, 0);
+    read_until->stamp = cloud_msg->header.stamp + ros::Duration(1, 0);//ros::Duration::Duration(uint32_t _sec, uint32_t _nsec)
     read_until_pub.publish(read_until);
 
     read_until->frame_id = "/filtered_points";
@@ -109,20 +109,20 @@ private:
    */
   boost::optional<Eigen::Vector4f> detect(const pcl::PointCloud<PointT>::Ptr& cloud) const {
     // compensate the tilt rotation
-    Eigen::Matrix4f tilt_matrix = Eigen::Matrix4f::Identity();
-    tilt_matrix.topLeftCorner(3, 3) = Eigen::AngleAxisf(tilt_deg * M_PI / 180.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
+    Eigen::Matrix4f tilt_matrix = Eigen::Matrix4f::Identity();//单位阵I
+    tilt_matrix.topLeftCorner(3, 3) = Eigen::AngleAxisf(tilt_deg * M_PI / 180.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();//Y轴转角度.在安装中为roll
 
     // filtering before RANSAC (height and normal filtering)
     pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>);
-    pcl::transformPointCloud(*cloud, *filtered, tilt_matrix);
-    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height + height_clip_range), false);
-    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height - height_clip_range), true);
+    pcl::transformPointCloud(*cloud, *filtered, tilt_matrix);//tilt_deg=0无所谓，但这里的变换矩阵应该用逆。
+    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height + height_clip_range), false);//输入点云，平面参数，分割方向（false为下，true为上）
+    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height - height_clip_range), true);//vector4f(nx,ny,nz,d):单位法向量+距离原点距离
 
     if(use_normal_filtering) {
       filtered = normal_filtering(filtered);
     }
 
-    pcl::transformPointCloud(*filtered, *filtered, static_cast<Eigen::Matrix4f>(tilt_matrix.inverse()));
+    pcl::transformPointCloud(*filtered, *filtered, static_cast<Eigen::Matrix4f>(tilt_matrix.inverse()));//去倾斜
 
     if(floor_filtered_pub.getNumSubscribers()) {
       filtered->header = cloud->header;
@@ -131,17 +131,17 @@ private:
 
     // too few points for RANSAC
     if(filtered->size() < floor_pts_thresh) {
-      return boost::none;
+      return boost::none;  //是一个类似空指针的none_t类型常量，表示未初始化
     }
 
     // RANSAC
     pcl::SampleConsensusModelPlane<PointT>::Ptr model_p(new pcl::SampleConsensusModelPlane<PointT>(filtered));
-    pcl::RandomSampleConsensus<PointT> ransac(model_p);
-    ransac.setDistanceThreshold(0.1);
+    pcl::RandomSampleConsensus<PointT> ransac(model_p);// RANSAC 拟合平面    
+    ransac.setDistanceThreshold(0.1); // 设置内点阈值
     ransac.computeModel();
 
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-    ransac.getInliers(inliers->indices);
+    ransac.getInliers(inliers->indices);// 获取内点   
 
     // too few inliers
     if(inliers->indices.size() < floor_pts_thresh) {
@@ -151,8 +151,8 @@ private:
     // verticality check of the detected floor's normal
     Eigen::Vector4f reference = tilt_matrix.inverse() * Eigen::Vector4f::UnitZ();
 
-    Eigen::VectorXf coeffs;
-    ransac.getModelCoefficients(coeffs);
+    EigenEigen::VectorXf coeffs;
+    ransac.getModelCoefficients(coeffs); // 获取地面在激光雷达中的系数
 
     double dot = coeffs.head<3>().dot(reference.head<3>());
     if(std::abs(dot) < std::cos(floor_normal_thresh * M_PI / 180.0)) {
@@ -213,19 +213,19 @@ private:
     ne.setInputCloud(cloud);
 
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
-    ne.setSearchMethod(tree);
+    ne.setSearchMethod(tree);//构建kdtree
 
     pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-    ne.setKSearch(10);
-    ne.setViewPoint(0.0f, 0.0f, sensor_height);
+    ne.setKSearch(10);//点云法向计算时，需要搜索的近邻点大小
+    ne.setViewPoint(0.0f, 0.0f, sensor_height);//视点的位置
     ne.compute(*normals);
 
     pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>);
     filtered->reserve(cloud->size());
 
     for(int i = 0; i < cloud->size(); i++) {
-      float dot = normals->at(i).getNormalVector3fMap().normalized().dot(Eigen::Vector3f::UnitZ());
-      if(std::abs(dot) > std::cos(normal_filter_thresh * M_PI / 180.0)) {
+      float dot = normals->at(i).getNormalVector3fMap().normalized().dot(Eigen::Vector3f::UnitZ());//单位法向量与Z轴单位向量点积（向量间内积，a·b=|a||b|cos<a,b>）
+      if(std::abs(dot) > std::cos(normal_filter_thresh * M_PI / 180.0)) { //负相关
         filtered->push_back(cloud->at(i));
       }
     }

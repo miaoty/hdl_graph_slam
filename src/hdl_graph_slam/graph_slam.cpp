@@ -305,7 +305,7 @@ int GraphSLAM::optimize(int num_iterations) {
   graph->setVerbose(true);
 
   std::cout << "chi2" << std::endl;
-  double chi2 = graph->chi2();
+  double chi2 = graph->chi2(); //卡方
 
   std::cout << "optimize!!" << std::endl;
   auto t1 = ros::WallTime::now();
